@@ -1,0 +1,32 @@
+timeout: 120s
+steps:
+    - name: gcr.io/cloud-builders/npm:current
+      args:
+          - install
+    - name: gcr.io/cloud-builders/npm:current
+      args:
+          - run
+          - build
+    - name: gcr.io/cloud-builders/npm:current
+      args:
+          - run
+          - test
+    - name: 'ubuntu'
+      entrypoint: 'bash'
+      args:
+          - '-c'
+          - |
+              echo //registry.npmjs.org/:_authToken=${_NPM_TOKEN} > .npmrc ;
+              echo email=devops@expan.do >> .npmrc ;
+              echo always-auth=true >> .npmrc ;
+              cat .npmrc ;
+      volumes:
+          - name: 'home'
+            path: /root/
+    - name: 'gcr.io/cloud-builders/npm'
+      args: ['publish']
+      env:
+          - HOME=/root/
+      volumes:
+          - name: 'home'
+            path: /root/

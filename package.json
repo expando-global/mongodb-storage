@@ -1,0 +1,61 @@
+{
+  "name": "mongodb-storage",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "ava --verbose"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/expando-global/mongodb-storage.git"
+  },
+  "keywords": [
+    "mongodb",
+    "storage"
+  ],
+  "author": "EXPANDO global, s.r.o.",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/expando-global/mongodb-storage/issues"
+  },
+  "homepage": "https://github.com/expando-global/mongodb-storage#readme",
+  "devDependencies": {
+    "@ava/typescript": "1.1.1",
+    "ava": "1.4.1",
+    "nyc": "15.0.1",
+    "prettier": "2.0.5",
+    "typescript": "3.8.3"
+  },
+  "dependencies": {
+    "@hapi/joi": "15.0.0",
+    "@types/deep-diff": "1.0.0",
+    "@types/faker": "4.1.11",
+    "@types/hapi__joi": "15.0.0",
+    "@types/lodash": "4.14.150",
+    "@types/mongodb": "3.5.16",
+    "deep-diff": "1.0.2",
+    "dotenv": "8.2.0",
+    "expando-convert-pattern": "^1.0.1",
+    "expando-money": "^1.0.4",
+    "joi-extract-type": "15.0.0",
+    "lodash": "4.17.15",
+    "mongodb": "3.5.7",
+    "mongodb-memory-server-core": "6.5.2",
+    "timekeeper": "2.2.0",
+    "typesafe-joi": "2.1.0"
+  },
+  "prettier": {
+    "tabWidth": 4,
+    "singleQuote": true,
+    "trailingComma": "all",
+    "semi": true,
+    "printWidth": 80
+  },
+  "ava": {
+    "files": [
+      "**/*.test.js"
+    ]
+  }
+}
