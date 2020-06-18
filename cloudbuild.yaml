@@ -12,7 +12,7 @@ steps:
           - run
           - test
       env:
-          - MONGOMS_DOWNLOAD_URL=https://fastdl.mongodb.org/osx/mongodb-macos-x86_64-4.2.8.tgz
+          - MONGOMS_DOWNLOAD_URL=https://fastdl.mongodb.org/linux/mongodb-linux-x86_64-ubuntu1804-4.2.6.tgz
     - name: 'ubuntu'
       entrypoint: 'bash'
       args:
