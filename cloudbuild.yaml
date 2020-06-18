@@ -12,6 +12,8 @@ steps:
       args:
           - install
           - libssl1.0.0
+          - libssl-dev
+          - --reinstall
     - name: gcr.io/cloud-builders/npm:current
       args:
           - run
