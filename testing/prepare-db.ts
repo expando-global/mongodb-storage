@@ -3,20 +3,11 @@ import { TestInterface } from 'ava';
 
 import { connectDb, disconnectDb, db } from '../lib/db-connector';
 
-const mongod = new MongoMemoryServer()
-// const mongod = new MongoMemoryServer({
-//     binary: {
-//         // downloadDir: '/path/to/mongodb/binaries',
-//         // platform: 'linux',
-//         // arch: 'x64',
-//         version: '4',
-//         // debug: '1',
-//         // downloadMirror: 'url',
-//         // disablePostinstall: '1',
-//         // systemBinary: '/usr/local/bin/mongod',
-//         // md5Check: '1',
-//     },
-// });
+const mongod = new MongoMemoryServer({
+    binary: {
+        version: '4.2.8',
+    },
+});
 
 export function prepareDb(test: TestInterface) {
     test.before(async () => {
