@@ -57,5 +57,12 @@
     "files": [
       "**/*.test.js"
     ]
+  },
+  "config": {
+    "mongodbMemoryServer": {
+      "version": "4.2.6",
+      "debug": "1",
+      "md5Check": "1"
+    }
   }
 }
