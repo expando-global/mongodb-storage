@@ -7,7 +7,7 @@ steps:
       args:
           - run
           - build
-    - name: gcr.io/cloud-builders/npm:current
+    - name: gcr.io/cloud-builders/npm:node-9.11.2
       args:
           - run
           - test
