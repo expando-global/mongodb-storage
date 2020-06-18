@@ -8,6 +8,11 @@ steps:
           - run
           - build
     - name: gcr.io/cloud-builders/npm:current
+      entrypoint: 'apt-get'
+      args:
+          - install
+          - libssl1.0.0
+    - name: gcr.io/cloud-builders/npm:current
       args:
           - run
           - test
