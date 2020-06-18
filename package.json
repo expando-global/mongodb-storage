@@ -42,7 +42,7 @@
     "joi-extract-type": "15.0.0",
     "lodash": "4.17.15",
     "mongodb": "3.5.7",
-    "mongodb-memory-server-core": "6.5.2",
+    "mongodb-memory-server": "6.5.2",
     "timekeeper": "2.2.0",
     "typesafe-joi": "2.1.0"
   },

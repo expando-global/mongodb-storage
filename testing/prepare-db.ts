@@ -1,4 +1,4 @@
-import { MongoMemoryServer } from 'mongodb-memory-server-core';
+import { MongoMemoryServer } from 'mongodb-memory-server';
 import { TestInterface } from 'ava';
 
 import { connectDb, disconnectDb, db } from '../lib/db-connector';
