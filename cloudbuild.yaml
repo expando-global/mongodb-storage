@@ -11,8 +11,8 @@ steps:
       args:
           - run
           - test
-      # env:
-      #     - MONGOMS_DOWNLOAD_URL=https://repo.mongodb.org/apt/debian/dists/stretch/mongodb-org/4.2/main/binary-amd64/mongodb-org-server_4.2.8_amd64.deb
+      env:
+          - MONGOMS_DOWNLOAD_URL=https://fastdl.mongodb.org/osx/mongodb-macos-x86_64-4.2.8.tgz
     - name: 'ubuntu'
       entrypoint: 'bash'
       args:
