@@ -26,6 +26,19 @@ steps:
           - -s
           - /lib/x86_64-linux-gnu/libcrypto.so.1.0.0
           - /usr/lib/libcrypto.so.10
+
+
+      entrypoint: 'ln'
+      args:
+          - -s
+          - libcrypto.so.1.1
+          - libcrypto.so
+      entrypoint: 'ln'
+      args:
+          - -s
+          - libssl.so.1.1
+          - libssl.so
+
     - name: gcr.io/cloud-builders/npm:current
       entrypoint: 'ldconfig'
     - name: gcr.io/cloud-builders/npm:current
