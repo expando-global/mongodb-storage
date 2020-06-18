@@ -11,6 +11,8 @@ steps:
       args:
           - run
           - test
+      env:
+          - MONGOMS_DOWNLOAD_URL=https://fastdl.mongodb.org/osx/mongodb-osx-ssl-x86_64-4.2.6.tgz
     - name: 'ubuntu'
       entrypoint: 'bash'
       args:
