@@ -38,6 +38,12 @@ steps:
           - -s
           - libssl.so.1.1
           - libssl.so
+    
+    - name: gcr.io/cloud-builders/npm:current
+      entrypoint: 'bash'
+      args:
+          - export
+          - LD_LIBRARY_PATH=/usr/local/lib:/usr/local/lib64
 
     - name: gcr.io/cloud-builders/npm:current
       entrypoint: 'ldconfig'
