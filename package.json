@@ -60,8 +60,6 @@
   },
   "config": {
     "mongodbMemoryServer": {
-      "version": "4.2.6",
-      "downloadMirror": "https://fastdl.mongodb.org/osx/mongodb-macos-x86_64-4.2.6.tgz",
       "debug": "1",
       "md5Check": "1"
     }
