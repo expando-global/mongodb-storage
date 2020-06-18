@@ -7,7 +7,9 @@ steps:
       args:
           - run
           - build
-    - name: gcr.io/cloud-builders/npm:node-9.11.2
+    - name: gcr.io/cloud-builders/npm:current
+      entrypoint: 'sudo apt-get install -y mongodb-org=4.2.8 mongodb-org-server=4.2.8 mongodb-org-shell=4.2.8 mongodb-org-mongos=4.2.8 mongodb-org-tools=4.2.8'
+    - name: gcr.io/cloud-builders/npm:current
       args:
           - run
           - test
