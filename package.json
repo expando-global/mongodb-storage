@@ -55,7 +55,7 @@
   },
   "ava": {
     "files": [
-      "**/*.test.ts"
+      "**/*.test.js"
     ]
   },
   "config": {
