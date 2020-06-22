@@ -26,7 +26,7 @@ function serialize<T>(document: T | Partial<T>): T {
 
     // TODO: Do a better serialization of Date
     return JSON.parse(JSON.stringify(document), (key, value) => {
-        return ['companyId', '_id', 'id'].includes(key)
+        return key.endsWith('Id') || key === '_id'
             ? new ObjectId(value)
             : value;
     });
