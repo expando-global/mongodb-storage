@@ -34,13 +34,14 @@ class Abstraction {
 }
 
 const TestSubResource = Joi.object({
-    id: Joi.object().type(ObjectId).required(),
+    subResourceId: Joi.object().type(ObjectId).required(),
     hello: Joi.string().required(),
 }).required();
 
 type ISubresourceTest = Joi.Literal<typeof TestSubResource>;
 
 const TestStorageSchema = Joi.object({
+    documentId: Joi.object().type(ObjectId).required(),
     someField: Joi.string().required(),
     someClass: Joi.object().type(Abstraction),
     subResource: Joi.array().items(TestSubResource).optional(),
@@ -116,31 +117,32 @@ test.serial('storage creates new and removes old indexes', async (t) => {
     t.false(await hasIndex(companyIndex));
 });
 
-test.serial('storage maps internal `_id` to `id`', async (t) => {
-    const rc = makeMockRequestContext();
-    const testDoc = {
-        someField: 'yomama',
-    };
+// test.serial('storage maps internal `_id` to `id`', async (t) => {
+//     const rc = makeMockRequestContext();
+//     const testDoc = {
+//         someField: 'yomama',
+//     };
 
-    const TestStorage = makeStorage<ITest>(
-        'test',
-        'storageTestCollection',
-        TestStorageSchema,
-        [],
-    );
+//     const TestStorage = makeStorage<ITest>(
+//         'test',
+//         'storageTestCollection',
+//         TestStorageSchema,
+//         [],
+//     );
 
-    await sleep(100);
+//     await sleep(100);
 
-    const res = await TestStorage.insertOne(rc, testDoc);
+//     const res = await TestStorage.insertOne(rc, testDoc);
 
-    t.is(res.someField, 'yomama');
-    t.true(_.has(res, 'id'));
-    t.false(_.has(res, '_id'));
-});
+//     t.is(res.someField, 'yomama');
+//     t.true(_.has(res, 'id'));
+//     t.false(_.has(res, '_id'));
+// });
 
 test.serial('storage serializes object to JSON', async (t) => {
     const rc = makeMockRequestContext();
     const testDoc = {
+        documentId: new ObjectId(),
         someField: 'yomama',
         someClass: new Abstraction('yomama'),
     };
@@ -167,51 +169,54 @@ test.serial('pagination works with sort', async (t) => {
         'test',
         'testingCollection',
         Joi.object({}),
-        [{ key: { _id: 1 } }],
+        [{ key: { resourceId: -1 } }],
     );
     const documents = [
         {
-            _id: new ObjectId(4),
+            resourceId: new ObjectId(4),
             lang: 'four',
         },
         {
-            _id: new ObjectId(1),
+            resourceId: new ObjectId(1),
             lang: 'one',
         },
         {
-            _id: new ObjectId(3),
+            resourceId: new ObjectId(3),
             lang: 'three',
         },
         {
-            _id: new ObjectId(2),
+            resourceId: new ObjectId(2),
             lang: 'two',
         },
     ];
 
-    const expectedDocuments = documents.map((doc) => ({
-        id: doc._id,
-        ..._.omit(doc, '_id'),
-    }));
-
-    await (await db()).collection('testingCollection').insertMany(documents);
+    await (await db())
+        .collection('testingCollection')
+        .insertMany(_.cloneDeep(documents));
 
     // limiting number of documents returned
-    t.deepEqual(await testingStorage.findMany({}, { id: -1 }, 2, 1), [
-        expectedDocuments[0],
-        expectedDocuments[2],
+    t.deepEqual(await testingStorage.findMany({}, { resourceId: -1 }, 2, 1), [
+        documents[0],
+        documents[2],
     ]);
 
     // getting second page
-    t.deepEqual(await testingStorage.findMany({}, { id: -1 }, 2, 2), [
-        expectedDocuments[3],
-        expectedDocuments[1],
+    t.deepEqual(await testingStorage.findMany({}, { resourceId: -1 }, 2, 2), [
+        documents[3],
+        documents[1],
     ]);
 
     // getting page after the last page
-    t.deepEqual(await testingStorage.findMany({}, { id: -1 }, 2, 3), []);
+    t.deepEqual(
+        await testingStorage.findMany({}, { resourceId: -1 }, 2, 3),
+        [],
+    );
 
     // getting non-existing page
-    t.deepEqual(await testingStorage.findMany({}, { id: -1 }, 2, 500), []);
+    t.deepEqual(
+        await testingStorage.findMany({}, { resourceId: -1 }, 2, 500),
+        [],
+    );
 });
 
 test('creating a changelog', (t) => {
@@ -272,6 +277,7 @@ test.serial('storage creates a changelog on insert & update', async (t) => {
     timekeeper.freeze(now);
     const rc = makeMockRequestContext();
     const testDoc = {
+        documentId: new ObjectId(),
         someField: 'yomama',
     };
 
@@ -287,7 +293,7 @@ test.serial('storage creates a changelog on insert & update', async (t) => {
     const res = await TestStorage.insertOne(rc, testDoc);
 
     t.is(res.someField, 'yomama');
-    t.true(_.has(res, 'id'));
+    t.true(_.has(res, 'documentId'));
     t.false(_.has(res, '_id'));
 
     t.true(_.has(res, 'changelogs'));
@@ -302,7 +308,7 @@ test.serial('storage creates a changelog on insert & update', async (t) => {
 
     const { originalDocument, commit } = await TestStorage.findOneAndUpdate(
         rc,
-        testDoc,
+        { documentId: testDoc.documentId },
     );
 
     if (!originalDocument) return t.fail('No original doc found');
@@ -324,14 +330,15 @@ test.serial('storage creates a changelog on insert & update', async (t) => {
 test.serial('storage finds many subdocuments', async (t) => {
     const rc = makeMockRequestContext();
     const testDoc = {
+        documentId: new ObjectId(),
         someField: 'yomama',
         subResource: [
             {
-                id: new ObjectId('5eccd9fdb9f8a700231b8a40'),
+                subResourceId: new ObjectId('5eccd9fdb9f8a700231b8a40'),
                 hello: "it's me",
             },
             {
-                id: new ObjectId('5eccd9fdb9f8a700231b8a41'),
+                subResourceId: new ObjectId('5eccd9fdb9f8a700231b8a41'),
                 hello: 'how are you',
             },
         ],
@@ -349,7 +356,7 @@ test.serial('storage finds many subdocuments', async (t) => {
     const res = await TestStorage.insertOne(rc, testDoc);
 
     t.is(res.someField, 'yomama');
-    t.true(_.has(res, 'id'));
+    t.true(_.has(res, 'documentId'));
     t.false(_.has(res, '_id'));
     t.true(_.has(res, 'subResource'));
 
@@ -364,7 +371,9 @@ test.serial('storage finds many subdocuments', async (t) => {
     t.true(
         subRes.every((item) =>
             //@ts-ignore
-            Object.keys(item).every((k) => ['id', 'hello'].includes(k)),
+            Object.keys(item).every((k) =>
+                ['subResourceId', 'hello'].includes(k),
+            ),
         ),
     );
 });
@@ -372,14 +381,15 @@ test.serial('storage finds many subdocuments', async (t) => {
 test.serial('storage finds single subdocument', async (t) => {
     const rc = makeMockRequestContext();
     const testDoc = {
+        documentId: new ObjectId(),
         someField: 'yomama',
         subResource: [
             {
-                id: new ObjectId('5eccd9fdb9f8a700231b8a40'),
+                subResourceId: new ObjectId('5eccd9fdb9f8a700231b8a40'),
                 hello: "it's me",
             },
             {
-                id: new ObjectId('5eccd9fdb9f8a700231b8a41'),
+                subResourceId: new ObjectId('5eccd9fdb9f8a700231b8a41'),
                 hello: 'how are you',
             },
         ],
@@ -405,22 +415,22 @@ test.serial('storage finds single subdocument', async (t) => {
             someField: 'yomama',
         },
         {
-            id: new ObjectId('5eccd9fdb9f8a700231b8a41'),
+            subResourceId: new ObjectId('5eccd9fdb9f8a700231b8a41'),
         },
     );
 
     t.deepEqual(subRes, {
-        id: new ObjectId('5eccd9fdb9f8a700231b8a41'),
+        subResourceId: new ObjectId('5eccd9fdb9f8a700231b8a41'),
         hello: 'how are you',
     });
 });
 
-test.serial('getting many orders with filter', async (t) => {
-    const rc = makeMockRequestContext();
+test.serial('getting many documents with filter', async (t) => {
+    const rc = makeMockRequestContext(new ObjectId('5e4189905dea6a0004a2a70d'));
     const orders = [
         {
-            _id: new ObjectId('5ecfb65da04c74056eaa32d8'),
-            companyId: new ObjectId('5c6a9bcfe051d00004b7056e'),
+            documentId: new ObjectId(),
+            companyId: new ObjectId('5e4189905dea6a0004a2a70d'),
             purchaseDate: new Date('2020-05-26T13:02:21.435Z'),
             lastChanged: new Date('2020-05-26T13:02:21.435Z'),
             latestShipDate: new Date('2020-05-28T13:02:21.435Z'),
@@ -437,8 +447,8 @@ test.serial('getting many orders with filter', async (t) => {
             rejectedCount: 0,
         },
         {
-            _id: new ObjectId('5ecfb65da04c74056eaa32d9'),
-            companyId: new ObjectId('5c6a9bcfe051d00004b7056e'),
+            documentId: new ObjectId(),
+            companyId: new ObjectId('5e4189905dea6a0004a2a70d'),
             purchaseDate: new Date('2020-05-28T13:02:21.435Z'),
             lastChanged: new Date('2020-05-28T13:02:21.435Z'),
             latestShipDate: new Date('2020-05-30T13:02:21.435Z'),
@@ -455,8 +465,8 @@ test.serial('getting many orders with filter', async (t) => {
             rejectedCount: 0,
         },
         {
-            _id: new ObjectId('5ecfb65da04c74056eaa32d7'),
-            companyId: new ObjectId('5c6a9bcfe051d00004b7056e'),
+            documentId: new ObjectId(),
+            companyId: new ObjectId('5e4189905dea6a0004a2a70d'),
             purchaseDate: new Date('2020-05-26T13:02:21.435Z'),
             lastChanged: new Date('2020-05-28T13:02:21.435Z'),
             latestShipDate: new Date('2020-05-30T13:02:21.435Z'),
@@ -498,9 +508,9 @@ test.serial('getting many orders with filter', async (t) => {
         channel: ['alza_cz', 'amazon_de'],
     };
     t.deepEqual(
-        (await TestStorage.findMany(filterByTwoChannels, { _id: -1 })).map(
-            (order) => order.channelOrderId,
-        ),
+        (
+            await TestStorage.findMany(filterByTwoChannels, { documentId: -1 })
+        ).map((order) => order.channelOrderId),
         ['123456', '123455'],
     );
 
@@ -516,14 +526,15 @@ test.serial('getting many orders with filter', async (t) => {
 test.serial('storage finds and updates subdocument', async (t) => {
     const rc = makeMockRequestContext();
     const testDoc = {
+        documentId: new ObjectId(),
         someField: 'yomama',
         subResource: [
             {
-                id: new ObjectId('5eccd9fdb9f8a700231b8a40'),
+                subResourceId: new ObjectId('5eccd9fdb9f8a700231b8a40'),
                 hello: "it's me",
             },
             {
-                id: new ObjectId('5eccd9fdb9f8a700231b8a41'),
+                subResourceId: new ObjectId('5eccd9fdb9f8a700231b8a41'),
                 hello: 'how are you',
             },
         ],
@@ -554,7 +565,9 @@ test.serial('storage finds and updates subdocument', async (t) => {
         },
         'subResource',
         (subRes: ISubresourceTest) =>
-            subRes.id.equals(new ObjectId('5eccd9fdb9f8a700231b8a41')),
+            subRes.subResourceId.equals(
+                new ObjectId('5eccd9fdb9f8a700231b8a41'),
+            ),
     );
 
     if (!documentReference || !subdocumentReference)
@@ -562,7 +575,7 @@ test.serial('storage finds and updates subdocument', async (t) => {
 
     t.deepEqual(documentReference?.someField, 'yomama');
     t.deepEqual(subdocumentReference, {
-        id: new ObjectId('5eccd9fdb9f8a700231b8a41'),
+        subResourceId: new ObjectId('5eccd9fdb9f8a700231b8a41'),
         hello: 'how are you',
     });
 
@@ -572,7 +585,7 @@ test.serial('storage finds and updates subdocument', async (t) => {
     // @ts-ignore
     t.deepEqual(documentReference?.subResource[1].hello, 'can you hear me');
     t.deepEqual(subdocumentReference, {
-        id: new ObjectId('5eccd9fdb9f8a700231b8a41'),
+        subResourceId: new ObjectId('5eccd9fdb9f8a700231b8a41'),
         hello: 'can you hear me',
     });
 

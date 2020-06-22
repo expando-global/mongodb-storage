@@ -5,7 +5,7 @@ import { ObjectId } from 'mongodb';
 
 // -----------------------------------------------------------------------------
 export const OrderDocumentSchema = Joi.object({
-    id: Joi.object().type(ObjectId).required(),
+    documentId: Joi.object().type(ObjectId).required(),
     companyId: Joi.object().type(ObjectId).required(),
 
     channel: Joi.string().required(),

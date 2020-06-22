@@ -22,11 +22,9 @@ interface Document {
 }
 
 function serialize<T>(document: T | Partial<T>): T {
-    if ('id' in document) delete document['id'];
-
     // TODO: Do a better serialization of Date
     return JSON.parse(JSON.stringify(document), (key, value) => {
-        return key.endsWith('Id') || key === '_id'
+        return (key.endsWith('Id') || key === '_id') && ObjectId.isValid(value)
             ? new ObjectId(value)
             : value;
     });
@@ -119,11 +117,8 @@ export function makeStorage<T extends Document>(
     };
 
     /**
-     * This validates the document against provided schema, except fields
-     * `id` and `changelogs`.
-     *
-     * `id` is assigned as `_id` by MongoDB and we map that field
-     * upon document retrieval.
+     * This validates the document against provided schema, except field
+     * `changelogs`.
      *
      * `changelogs` is managed by storage layer and should not be part of
      * user input.
@@ -133,7 +128,6 @@ export function makeStorage<T extends Document>(
             document,
             // @ts-ignore
             documentSchema.append({
-                id: Joi.optional(),
                 changelogs: Joi.optional(),
             }),
             {
@@ -151,20 +145,16 @@ export function makeStorage<T extends Document>(
 
     /**
      * Maps database documents to format that is valid for the application.
-     * It is used mostly for conversion of object abstractions, _id -> id
-     * mapping, etc
+     * It is used mostly for conversion of object abstractions, etc
      */
-    const mapDocumentFromDb = ({ _id, ...doc }: { _id: ObjectId }) => {
+    const mapDocumentFromDb = (doc: any): T => {
         const mappedDoc = convertObjectWithPattern<T>(
             doc,
             Object.keys(MoneySchema.describe().children),
             Money.fromMoney,
         );
 
-        return {
-            id: _id,
-            ...mappedDoc,
-        } as { id: ObjectId } & T;
+        return mappedDoc;
     };
 
     ensureCollection().then(() => ensureIndexes(indexes));
@@ -181,11 +171,13 @@ export function makeStorage<T extends Document>(
                 }),
             );
 
-            return mapDocumentFromDb(result.ops[0]);
+            return mapDocumentFromDb(_.omit(result.ops[0], '_id'));
         },
 
         findOne: async function (filter: FilterQuery<any> = {}) {
-            const foundDocument = await (await collection()).findOne(filter);
+            const foundDocument = await (await collection()).findOne(filter, {
+                projection: { _id: 0 },
+            });
             if (!foundDocument)
                 throw new Error(
                     documentName +
@@ -224,14 +216,11 @@ export function makeStorage<T extends Document>(
                     ),
             );
 
-            const mongoSort = _.mapKeys(sort, (v, k) =>
-                k === 'id' ? '_id' : k,
-            );
-
             return (
                 await (await collection())
                     .find(mongoFilter)
-                    .sort(mongoSort)
+                    .project({ _id: 0 })
+                    .sort(sort)
                     .skip(limit * (page - 1))
                     .limit(limit)
                     .toArray()
@@ -271,6 +260,7 @@ export function makeStorage<T extends Document>(
                         filter,
                         updateQuery,
                         {
+                            projection: { _id: 0 },
                             returnOriginal: false,
                         },
                     );
