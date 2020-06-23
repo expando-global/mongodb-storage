@@ -5,7 +5,7 @@ import { prepareDb } from '../testing/prepare-db';
 import * as Joi from 'typesafe-joi';
 import _ from 'lodash';
 import timekeeper from 'timekeeper';
-import { makeMockRequestContext } from '../testing/mock-request-context';
+import { makeMockRequestContext } from 'expando-request-context';
 import { createChangelog, makeStorage } from './storage';
 
 import { IndexSpecification, ObjectId } from 'mongodb';

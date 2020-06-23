@@ -12,7 +12,7 @@ import { db } from './db-connector';
 import { convertObjectWithPattern } from 'expando-convert-pattern';
 import { Money, MoneySchema } from 'expando-money';
 import { IChangelog } from '../schemas/changelog';
-import { IRequestContext } from '../schemas/request-context';
+import { IRequestContext } from 'expando-request-context';
 
 import { diff } from 'deep-diff';
 
