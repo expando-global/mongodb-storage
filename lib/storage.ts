@@ -179,11 +179,7 @@ export function makeStorage<T extends Document>(
                 projection: { _id: 0 },
             });
             if (!foundDocument)
-                throw new Error(
-                    documentName +
-                        (filter._id ? ` #${filter._id}` : '') +
-                        " doesn't exist",
-                );
+                throw new Error(documentName + " doesn't exist");
             return mapDocumentFromDb(foundDocument);
         },
 
@@ -266,11 +262,7 @@ export function makeStorage<T extends Document>(
                     );
 
                     if (!result.value)
-                        throw new Error(
-                            "Couldn't update" +
-                                documentName +
-                                (filter._id ? ` #${filter._id}` : ''),
-                        );
+                        throw new Error("Couldn't update" + documentName);
 
                     return mapDocumentFromDb(result.value);
                 },
@@ -314,15 +306,7 @@ export function makeStorage<T extends Document>(
                 filterSubdocuments,
             );
             if (!subdoc)
-                throw new Error(
-                    'Resource' +
-                        (filterSubdocuments?.id
-                            ? ` #${filterSubdocuments?.id}`
-                            : '') +
-                        " doesn't exist on " +
-                        documentName +
-                        (filterParent._id ? ` #${filterParent._id}` : ''),
-                );
+                throw new Error("Resource doesn't exist on " + documentName);
             return subdoc as U;
         },
 
@@ -342,11 +326,7 @@ export function makeStorage<T extends Document>(
             ].find(subdocumentPredicate);
 
             if (!subdocumentReference)
-                throw new Error(
-                    "Resource doesn't exist on " +
-                        documentName +
-                        (filterParent._id ? ` #${filterParent._id}` : ''),
-                );
+                throw new Error("Resource doesn't exist on " + documentName);
 
             return {
                 documentReference: originalDocument,
