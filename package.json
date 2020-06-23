@@ -2,15 +2,15 @@
   "name": "expando-mongodb-storage",
   "version": "2.1.1",
   "description": "",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
     "test": "ava --verbose"
   },
   "files": [
-    "**/*.js",
-    "**/*.js.map",
-    "**/*.d.ts"
+    "dist/**/*.js",
+    "dist/**/*.js.map",
+    "dist/**/*.d.ts"
   ],
   "repository": {
     "type": "git",
