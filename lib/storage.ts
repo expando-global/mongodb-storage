@@ -55,6 +55,7 @@ export function makeStorage<T extends Document>(
     collectionName: string,
     documentSchema: JoiObject,
     indexes: IndexSpecification[],
+    keepChangelog: boolean,
 ) {
     const collection = async () => {
         return (await db()).collection(collectionName);
@@ -137,7 +138,7 @@ export function makeStorage<T extends Document>(
 
         if (error)
             throw new Error(
-                `Error validating '${collectionName}' document: ${error.message}`,
+                `Error validating '${documentName}': ${error.message}`,
             );
 
         return value;
@@ -164,11 +165,16 @@ export function makeStorage<T extends Document>(
             validate(document);
 
             const result = await (await collection()).insertOne(
-                Object.assign(serialize(document), {
-                    // add a changelog with empty changes to track
-                    // where the document came from in the first place
-                    changelogs: [createChangelog(rc, {}, {})],
-                }),
+                Object.assign(
+                    serialize(document),
+                    keepChangelog
+                        ? {
+                              // add a changelog with empty changes to track
+                              // where the document came from in the first place
+                              changelogs: [createChangelog(rc, {}, {})],
+                          }
+                        : {},
+                ),
             );
 
             return mapDocumentFromDb(_.omit(result.ops[0], '_id'));
@@ -236,20 +242,28 @@ export function makeStorage<T extends Document>(
                     delete documentUpdate['changelogs'];
 
                     const serializedChanges = serialize<T>(documentUpdate);
-                    const serializedOriginal = serialize<T>(
-                        originalDocument as T,
-                    );
-                    const changelog = createChangelog(
-                        rc,
-                        serializedOriginal,
-                        serializedChanges,
-                    );
+
+                    const changelogUpdateQuery = (function () {
+                        if (!keepChangelog) return null;
+
+                        const serializedOriginal = serialize<T>(
+                            originalDocument as T,
+                        );
+                        const changelog = createChangelog(
+                            rc,
+                            serializedOriginal,
+                            serializedChanges,
+                        );
+                        return {
+                            $push: {
+                                changelogs: changelog as IChangelog | undefined,
+                            } as PushOperator<any>,
+                        };
+                    })();
 
                     const updateQuery: UpdateQuery<any> = {
                         $set: serializedChanges,
-                        $push: {
-                            changelogs: changelog as IChangelog | undefined,
-                        } as PushOperator<any>,
+                        ...changelogUpdateQuery,
                     };
 
                     const result = await (await collection()).findOneAndUpdate(

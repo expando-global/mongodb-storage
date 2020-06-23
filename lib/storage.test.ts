@@ -67,6 +67,7 @@ test.serial('storage creates a collection', async (t) => {
         'storageTestCollection',
         TestStorageSchema,
         [],
+        true,
     );
 
     await sleep(100);
@@ -95,10 +96,13 @@ test.serial('storage creates new and removes old indexes', async (t) => {
     t.false(await hasIndex(someFieldIndex));
     t.false(await hasIndex(companyIndex));
 
-    makeStorage('test', 'storageTestCollection', TestStorageSchema, [
-        someFieldIndex,
-        companyIndex,
-    ]);
+    makeStorage(
+        'test',
+        'storageTestCollection',
+        TestStorageSchema,
+        [someFieldIndex, companyIndex],
+        true,
+    );
 
     await sleep(100);
 
@@ -107,9 +111,13 @@ test.serial('storage creates new and removes old indexes', async (t) => {
 
     await sleep(10);
 
-    makeStorage('test', 'storageTestCollection', TestStorageSchema, [
-        someFieldIndex,
-    ]);
+    makeStorage(
+        'test',
+        'storageTestCollection',
+        TestStorageSchema,
+        [someFieldIndex],
+        true,
+    );
 
     await sleep(100);
 
@@ -152,6 +160,7 @@ test.serial('storage serializes object to JSON', async (t) => {
         'storageTestCollection',
         TestStorageSchema,
         [],
+        true,
     );
 
     await sleep(100);
@@ -170,6 +179,7 @@ test.serial('pagination works with sort', async (t) => {
         'testingCollection',
         Joi.object({}),
         [{ key: { resourceId: -1 } }],
+        true,
     );
     const documents = [
         {
@@ -286,6 +296,7 @@ test.serial('storage creates a changelog on insert & update', async (t) => {
         'storageChangelogTestCollection',
         TestStorageSchema,
         [],
+        true,
     );
 
     await sleep(100);
@@ -327,6 +338,55 @@ test.serial('storage creates a changelog on insert & update', async (t) => {
     t.is(_.get(updRes, 'changelogs.1.changes.length'), 1);
 });
 
+test.serial(
+    'storage changelog can be disabled for insert & update',
+    async (t) => {
+        const now = new Date();
+        timekeeper.freeze(now);
+        const rc = makeMockRequestContext();
+        const testDoc = {
+            documentId: new ObjectId(),
+            someField: 'yomama',
+        };
+
+        const TestStorage = makeStorage<ITest>(
+            'test',
+            'storageNoChangelogTestCollection',
+            TestStorageSchema,
+            [],
+            false,
+        );
+
+        await sleep(100);
+
+        const res = await TestStorage.insertOne(rc, testDoc);
+
+        t.is(res.someField, 'yomama');
+        t.true(_.has(res, 'documentId'));
+        t.false(_.has(res, '_id'));
+
+        t.false(_.has(res, 'changelogs'));
+
+        timekeeper.reset();
+
+        const { originalDocument, commit } = await TestStorage.findOneAndUpdate(
+            rc,
+            {
+                documentId: testDoc.documentId,
+            },
+        );
+
+        if (!originalDocument) return t.fail('No original doc found');
+
+        Object.assign(originalDocument, { someField: 'yodaddy' });
+        const updRes = await commit(originalDocument);
+
+        if (!updRes) return t.fail('No updated doc returned');
+
+        t.false(_.has(updRes, 'changelogs'));
+    },
+);
+
 test.serial('storage finds many subdocuments', async (t) => {
     const rc = makeMockRequestContext();
     const testDoc = {
@@ -349,6 +409,7 @@ test.serial('storage finds many subdocuments', async (t) => {
         'subdocsChangelogTestCollection',
         TestStorageSchema,
         [],
+        true,
     );
 
     await sleep(100);
@@ -400,6 +461,7 @@ test.serial('storage finds single subdocument', async (t) => {
         'subdocChangelogTestCollection',
         TestStorageSchema,
         [],
+        true,
     );
 
     await sleep(100);
@@ -489,6 +551,7 @@ test.serial('getting many documents with filter', async (t) => {
         'ordersTestCollection',
         OrderDocumentSchema,
         [],
+        true,
     );
 
     await sleep(100);
@@ -545,6 +608,7 @@ test.serial('storage finds and updates subdocument', async (t) => {
         'subdocUpdateTestCollection',
         TestStorageSchema,
         [],
+        true,
     );
 
     await sleep(100);
