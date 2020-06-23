@@ -44,7 +44,7 @@
     "dotenv": "8.2.0",
     "expando-convert-pattern": "^1.0.1",
     "expando-money": "^1.0.4",
-    "expando-request-context": "^1.1.0",
+    "expando-request-context": "^1.1.1",
     "joi-extract-type": "15.0.0",
     "lodash": "4.17.15",
     "mongodb": "3.5.7",
