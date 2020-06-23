@@ -132,6 +132,7 @@ export function makeStorage<T extends Document>(
                 changelogs: Joi.optional(),
             }),
             {
+                allowUnknown: false,
                 stripUnknown: true,
             },
         );
