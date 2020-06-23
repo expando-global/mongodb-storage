@@ -6,13 +6,19 @@ import { MongoClient, Db } from 'mongodb';
 let GLOBAL_CONNECTION: MongoClient;
 
 export function db(): Promise<Db> {
-    if (!GLOBAL_CONNECTION)
+    if (!GLOBAL_CONNECTION) {
+        let timer: NodeJS.Timeout;
+
         return new Promise((resolve) => {
             console.warn('Requesting database access, not connected yet');
-            setInterval(() => {
-                if (GLOBAL_CONNECTION) resolve(GLOBAL_CONNECTION.db());
+            timer = setInterval(() => {
+                if (GLOBAL_CONNECTION) {
+                    clearInterval(timer);
+                    resolve(GLOBAL_CONNECTION.db());
+                }
             }, 100);
         });
+    }
 
     return Promise.resolve(GLOBAL_CONNECTION.db());
 }
