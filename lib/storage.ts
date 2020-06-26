@@ -338,7 +338,7 @@ export function makeStorage<T extends Document>(
 
             const subdocumentReference: U = originalDocument[
                 subdocumentPath
-            ].find(subdocumentPredicate);
+            ]?.find(subdocumentPredicate);
 
             if (!subdocumentReference)
                 throw new Error("Resource doesn't exist on " + documentName);
@@ -346,7 +346,13 @@ export function makeStorage<T extends Document>(
             return {
                 documentReference: originalDocument,
                 subdocumentReference,
-                commit,
+                commitAndReturnSubdocument: async function (
+                    documentUpdate: Partial<T>,
+                ): Promise<U> {
+                    return (await commit(documentUpdate))[
+                        subdocumentPath
+                    ]?.find(subdocumentPredicate);
+                },
             };
         },
     };

@@ -621,7 +621,7 @@ test.serial('storage finds and updates subdocument', async (t) => {
     const {
         documentReference,
         subdocumentReference,
-        commit,
+        commitAndReturnSubdocument,
     } = await TestStorage.findOneSubdocumentAndUpdate<ISubresourceTest>(
         rc,
         {
@@ -654,9 +654,15 @@ test.serial('storage finds and updates subdocument', async (t) => {
     });
 
     // @ts-ignore
-    const updateResult = await commit(documentReference);
+    const updateResult = await commitAndReturnSubdocument(documentReference);
 
-    t.deepEqual(updateResult.changelogs[1].changes, [
+    t.deepEqual(updateResult, {
+        subResourceId: new ObjectId('5eccd9fdb9f8a700231b8a41'),
+        hello: 'can you hear me',
+    });
+
+    const updatedDocument = await TestStorage.findOne({ someField: 'yomama' });
+    t.deepEqual(updatedDocument.changelogs[1].changes, [
         {
             kind: 'E',
             path: ['subResource', 1, 'hello'],
