@@ -9,7 +9,7 @@ import _ from 'lodash';
 
 import { db } from './db-connector';
 import { convertObjectWithPattern } from 'expando-convert-pattern';
-import { Money, MoneySchema } from 'expando-money';
+import { MoneySchema } from 'expando-money';
 import { IChangelog } from '../schemas/changelog';
 import { IRequestContext } from 'expando-request-context';
 
@@ -136,20 +136,6 @@ export function makeStorage<T extends Document>(
     };
 
     /**
-     * Maps database documents to format that is valid for the application.
-     * It is used mostly for conversion of object abstractions, etc
-     */
-    const mapDocumentFromDb = (doc: any): T => {
-        const mappedDoc = convertObjectWithPattern<T>(
-            doc,
-            Object.keys(MoneySchema.describe().children),
-            Money.fromMoney,
-        );
-
-        return mappedDoc;
-    };
-
-    /**
      * Maps document from application to format that is valid for the database.
      * It is used mostly for conversion of object abstractions, etc
      */
@@ -182,7 +168,7 @@ export function makeStorage<T extends Document>(
                 ),
             );
 
-            return mapDocumentFromDb(_.omit(result.ops[0], '_id'));
+            return _.omit(result.ops[0], '_id');
         },
 
         findOne: async function (filter: FilterQuery<any> = {}) {
@@ -191,7 +177,7 @@ export function makeStorage<T extends Document>(
             });
             if (!foundDocument)
                 throw new Error(documentName + " doesn't exist");
-            return mapDocumentFromDb(foundDocument);
+            return foundDocument;
         },
 
         findMany: async function (
@@ -223,15 +209,13 @@ export function makeStorage<T extends Document>(
                     ),
             );
 
-            return (
-                await (await collection())
-                    .find(mongoFilter)
-                    .project({ _id: 0 })
-                    .sort(sort)
-                    .skip(limit * (page - 1))
-                    .limit(limit)
-                    .toArray()
-            ).map(mapDocumentFromDb);
+            return await (await collection())
+                .find(mongoFilter)
+                .project({ _id: 0 })
+                .sort(sort)
+                .skip(limit * (page - 1))
+                .limit(limit)
+                .toArray();
         },
 
         findOneAndUpdate: async function (
@@ -285,7 +269,7 @@ export function makeStorage<T extends Document>(
                     if (!result.value)
                         throw new Error("Couldn't update" + documentName);
 
-                    return mapDocumentFromDb(result.value);
+                    return result.value;
                 },
             };
         },
@@ -311,9 +295,7 @@ export function makeStorage<T extends Document>(
                         { $project: { [subdocumentPath]: 1 } },
                     ])
                     .toArray()
-            )
-                .map(mapDocumentFromDb)
-                .map((doc: T) => doc[subdocumentPath] as U);
+            ).map((doc: T) => doc[subdocumentPath] as U);
         },
 
         findOneSubdocument: async function <U>(
