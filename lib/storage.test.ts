@@ -13,25 +13,12 @@ import {
     IOrderDocument,
     OrderDocumentSchema,
 } from '../testing/test-order-schema';
+import { Money, CurrencyCode } from 'expando-money';
 
 export const sleep = (ms = 1000) =>
     new Promise((resolve) => setTimeout(resolve, ms));
 
 prepareDb(test);
-
-class Abstraction {
-    constructor(public name: string) {}
-
-    shoutAtMama() {
-        return `hey ${this.name}`;
-    }
-
-    toJSON() {
-        return {
-            name: `${this.name} was serialized`,
-        };
-    }
-}
 
 const TestSubResource = Joi.object({
     subResourceId: Joi.object().type(ObjectId).required(),
@@ -43,7 +30,7 @@ type ISubresourceTest = Joi.Literal<typeof TestSubResource>;
 const TestStorageSchema = Joi.object({
     documentId: Joi.object().type(ObjectId).required(),
     someField: Joi.string().required(),
-    someClass: Joi.object().type(Abstraction),
+    someClass: Joi.object().type(Money),
     subResource: Joi.array().items(TestSubResource).optional(),
     changelogs: Joi.any().optional(),
 }).required();
@@ -147,31 +134,40 @@ test.serial('storage creates new and removes old indexes', async (t) => {
 //     t.false(_.has(res, '_id'));
 // });
 
-test.serial('storage serializes object to JSON', async (t) => {
-    const rc = makeMockRequestContext();
-    const testDoc = {
-        documentId: new ObjectId(),
-        someField: 'yomama',
-        someClass: new Abstraction('yomama'),
-    };
+test.serial(
+    'storage serializes `Money` constructors to plain objects',
+    async (t) => {
+        const rc = makeMockRequestContext();
+        const testDoc = {
+            documentId: new ObjectId(),
+            someField: 'yomama',
+            someClass: Money.from('11.2', 'CZK' as CurrencyCode),
+        };
 
-    const TestStorage = makeStorage<ITest>(
-        'test',
-        'storageTestCollection',
-        TestStorageSchema,
-        [],
-        true,
-    );
+        const TestStorage = makeStorage<ITest>(
+            'test',
+            'storageTestCollection',
+            TestStorageSchema,
+            [],
+            true,
+        );
 
-    await sleep(100);
+        await sleep(100);
 
-    const res = await TestStorage.insertOne(rc, testDoc);
+        const res = await TestStorage.insertOne(rc, testDoc);
 
-    t.is(res.someField, 'yomama');
-    t.deepEqual(res.someClass, {
-        name: 'yomama was serialized',
-    } as Abstraction);
-});
+        const rawDocument = await (await db())
+            .collection('storageTestCollection')
+            .findOne({ someField: 'yomama' });
+
+        if (!rawDocument) t.fail('Inserted document not found');
+
+        t.deepEqual(rawDocument.someClass, {
+            value: '11.2',
+            currencyCode: 'CZK',
+        });
+    },
+);
 
 test.serial('pagination works with sort', async (t) => {
     const testingStorage = makeStorage(

@@ -1,7 +1,6 @@
 import {
     FilterQuery,
     IndexSpecification,
-    ObjectId,
     UpdateQuery,
     PushOperator,
 } from 'mongodb';
@@ -19,15 +18,6 @@ import { diff } from 'deep-diff';
 interface Document {
     [key: string]: any;
     changelogs?: any;
-}
-
-function serialize<T>(document: T | Partial<T>): T {
-    // TODO: Do a better serialization of Date
-    return JSON.parse(JSON.stringify(document), (key, value) => {
-        return (key.endsWith('Id') || key === '_id') && ObjectId.isValid(value)
-            ? new ObjectId(value)
-            : value;
-    });
 }
 
 export function createChangelog<T>(
@@ -159,6 +149,20 @@ export function makeStorage<T extends Document>(
         return mappedDoc;
     };
 
+    /**
+     * Maps document from application to format that is valid for the database.
+     * It is used mostly for conversion of object abstractions, etc
+     */
+    const serializeDocumentToDb = (doc: any): T => {
+        const mappedDoc = convertObjectWithPattern<T>(
+            doc,
+            Object.keys(MoneySchema.describe().children),
+            (moneyObject) => JSON.parse(JSON.stringify(moneyObject)),
+        );
+
+        return mappedDoc;
+    };
+
     ensureCollection().then(() => ensureIndexes(indexes));
 
     return {
@@ -167,7 +171,7 @@ export function makeStorage<T extends Document>(
 
             const result = await (await collection()).insertOne(
                 Object.assign(
-                    serialize(document),
+                    serializeDocumentToDb(document),
                     keepChangelog
                         ? {
                               // add a changelog with empty changes to track
@@ -199,11 +203,11 @@ export function makeStorage<T extends Document>(
             function dateToFilter(k: string, v: Date): any {
                 switch (k) {
                     case 'purchasedAfter':
-                        return ['purchaseDate', { $gt: v.toISOString() }];
+                        return ['purchaseDate', { $gt: v }];
                     case 'updatedAfter':
-                        return ['lastChanged', { $gt: v.toISOString() }];
+                        return ['lastChanged', { $gt: v }];
                     case 'shouldShipBy':
-                        return ['latestShipDate', { $lt: v.toISOString() }];
+                        return ['latestShipDate', { $lt: v }];
                 }
             }
 
@@ -242,12 +246,14 @@ export function makeStorage<T extends Document>(
                     if (originalDocument) delete originalDocument['changelogs'];
                     delete documentUpdate['changelogs'];
 
-                    const serializedChanges = serialize<T>(documentUpdate);
+                    const serializedChanges = serializeDocumentToDb(
+                        documentUpdate,
+                    );
 
                     const changelogUpdateQuery = (function () {
                         if (!keepChangelog) return null;
 
-                        const serializedOriginal = serialize<T>(
+                        const serializedOriginal = serializeDocumentToDb(
                             originalDocument as T,
                         );
                         const changelog = createChangelog(
