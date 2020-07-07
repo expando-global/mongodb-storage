@@ -171,7 +171,7 @@ export function makeStorage<T extends Document>(
             return _.omit(result.ops[0], '_id');
         },
 
-        findOne: async function (filter: FilterQuery<any> = {}) {
+        findOne: async function (filter: FilterQuery<any> = {}): Promise<T> {
             const foundDocument = await (await collection()).findOne(filter, {
                 projection: { _id: 0 },
             });
@@ -185,7 +185,7 @@ export function makeStorage<T extends Document>(
             sort: FilterQuery<any> = {},
             limit: number = 50,
             page: number = 1,
-        ) {
+        ): Promise<T[]> {
             function dateToFilter(k: string, v: Date): any {
                 switch (k) {
                     case 'purchasedAfter':
@@ -226,7 +226,9 @@ export function makeStorage<T extends Document>(
 
             return {
                 originalDocument: _.cloneDeep(originalDocument),
-                commit: async function (documentUpdate: Partial<T>) {
+                commit: async function (
+                    documentUpdate: Partial<T>,
+                ): Promise<T> {
                     if (originalDocument) delete originalDocument['changelogs'];
                     delete documentUpdate['changelogs'];
 
@@ -278,7 +280,7 @@ export function makeStorage<T extends Document>(
             subdocumentPath: string,
             filterParent: FilterQuery<any> = {},
             filterSubdocuments: FilterQuery<any> = {},
-        ) {
+        ): Promise<U[]> {
             const subdocumentMatch = _.mapKeys(
                 filterSubdocuments,
                 (v, k) => `${subdocumentPath}.${k}`,
@@ -302,7 +304,7 @@ export function makeStorage<T extends Document>(
             subdocumentPath: string,
             filterParent: FilterQuery<any> = {},
             filterSubdocuments?: FilterQuery<any>,
-        ) {
+        ): Promise<U> {
             const [subdoc] = await this.findManySubdocuments(
                 subdocumentPath,
                 filterParent,
