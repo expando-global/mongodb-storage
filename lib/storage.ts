@@ -152,7 +152,10 @@ export function makeStorage<T extends Document>(
     ensureCollection().then(() => ensureIndexes(indexes));
 
     return {
-        insertOne: async function (rc: IRequestContext, document: any) {
+        insertOne: async function (
+            rc: IRequestContext,
+            document: any,
+        ): Promise<T> {
             validate(document);
 
             const result = await (await collection()).insertOne(
